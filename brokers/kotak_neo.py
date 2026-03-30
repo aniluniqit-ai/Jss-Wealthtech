@@ -126,6 +126,10 @@ class KotakNeo:
         except:
             return None
 
+    @property
+    def connected(self):
+        return self.logged_in
+
     def get_history(self, token, exchange):
         if not self.logged_in or not self.api:
             return None

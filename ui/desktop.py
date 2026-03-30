@@ -9,18 +9,18 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 
-BG = "#1a1508"
-BG2 = "#2a2310"
-BG3 = "#353018"
-GOLD = "#FFD700"
-ORANGE = "#FF8C00"
-GREEN = "#00FF88"
-RED = "#FF4444"
-WHITE = "#FFFFFF"
-BLACK = "#000000"
-GRAY = "#999977"
-PURPLE = "#9370DB"
-CYAN = "#00CED1"
+BG = "#FFFFE0"  # Light yellow background
+BG2 = "#FFFACD"  # Lemon chiffon for panels
+BG3 = "#F0E68C"  # Khaki for inputs
+GOLD = "#FFD700"  # Bright gold
+ORANGE = "#FF8C00"  # Dark orange
+GREEN = "#32CD32"  # Lime green
+RED = "#FF4444"  # Red
+WHITE = "#FFFFFF"  # White
+BLACK = "#000000"  # Black
+GRAY = "#999977"  # Olive gray
+PURPLE = "#9370DB"  # Medium purple
+CYAN = "#00CED1"  # Dark turquoise
 
 MANTRAS = """॥ ॐ श्री गणेशाय नमः ि॥
 श्री शिवाय नमस्तुभ्यं
@@ -98,6 +98,7 @@ class JssDesktop:
             lbl.pack()
         else:
             Label(left, text="स्वस्तिक", font=("Arial", 20), fg=GOLD, bg=BG2).pack()
+        Label(left, text="शुभ", font=("Arial", 16, "bold"), fg=GOLD, bg=BG2).pack(pady=(5,0))
         
         center = Frame(top, bg=BG2)
         center.pack(expand=True)
@@ -111,6 +112,7 @@ class JssDesktop:
         
         right = Frame(top, bg=BG2, width=200)
         right.pack(side=RIGHT, padx=20)
+        Label(right, text="लाभी", font=("Arial", 16, "bold"), fg=GOLD, bg=BG2).pack(pady=(0,5))
         shubh_img = self._get_img('shubh', (50, 50))
         if shubh_img:
             lbl = Label(right, image=shubh_img, bg=BG2)
@@ -401,6 +403,36 @@ class JssDesktop:
             
         except Exception as e:
             self._log(f"❌ Engine init error: {e}")
+
+    def _update_ui(self, status):
+        # status is from TradingEngine._get_status()
+        try:
+            self.lbl_mode.config(text=status.get('mode', '-'))
+            self.lbl_day.config(text=status.get('day_type', '-'))
+            self.lbl_time.config(text=status.get('time_window', '-'))
+            self.lbl_expiry.config(text=status.get('expiry_symbol', '-'))
+            self.lbl_market.config(text=status.get('market_condition', '-'))
+            self.lbl_conf.config(text=f"{status.get('confidence', 0):.2f}")
+            self.lbl_momentum.config(text=f"{status.get('momentum', 0):.2f}")
+            self.lbl_bs.config(text=f"{status.get('buyer_seller', 0):.2f}")
+            self.lbl_kotak.config(text="CONNECTED" if status.get('kotak_connected') else "DISCONNECTED")
+            self.lbl_tg.config(text=status.get('tg_reader_connected', '-'))
+
+            # Update live rates table
+            ltp_data = status.get('ltp', {})
+            for iid in self.rates_tree.get_children():
+                values = list(self.rates_tree.item(iid, 'values'))
+                symbol = values[0]
+                m = ltp_data.get(symbol, {})
+                values[1] = f"{m.get('ltp', '-'):.2f}" if m.get('ltp') is not None else '-'
+                values[2] = f"{m.get('change', '-'):.2f}" if m.get('change') is not None else '-'
+                values[3] = f"{m.get('change_pct', '-'):.2f}" if m.get('change_pct') is not None else '-'
+                values[4] = f"{m.get('high', '-'):.2f}" if m.get('high') is not None else '-'
+                values[5] = f"{m.get('low', '-'):.2f}" if m.get('low') is not None else '-'
+                values[6] = '✅' if status.get('kotak_connected') else '⛔'
+                self.rates_tree.item(iid, values=values)
+        except Exception as e:
+            self._log(f"❌ UI update failed: {e}")
 
     def _show_popup(self, title, callback):
         """Shortcut for popup"""
