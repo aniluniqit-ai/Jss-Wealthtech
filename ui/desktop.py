@@ -2,25 +2,27 @@
 JSS WEALTHTECH - DIVINE DESKTOP UI
 ॥ जय श्री सांवरीया सेठ ि॥
 """
-import os, sys, json, time
+import os
+import json
+import threading
+import asyncio  # <--- Added for Async Fix
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from tkinter import *
-from tkinter import ttk, messagebox
-from PIL import Image, ImageTk
+from tkinter import ttk
 
-BG = "#FFFFE0"  # Light yellow background
-BG2 = "#FFFACD"  # Lemon chiffon for panels
-BG3 = "#F0E68C"  # Khaki for inputs
-GOLD = "#FFD700"  # Bright gold
-ORANGE = "#FF8C00"  # Dark orange
-GREEN = "#32CD32"  # Lime green
-RED = "#FF4444"  # Red
-WHITE = "#FFFFFF"  # White
-BLACK = "#000000"  # Black
-GRAY = "#999977"  # Olive gray
-PURPLE = "#9370DB"  # Medium purple
-CYAN = "#00CED1"  # Dark turquoise
+BG = "#1a1508"
+BG2 = "#2a2310"
+BG3 = "#353018"
+GOLD = "#FFD700"
+DARK_GOLD = "#B8860B"
+ORANGE = "#FF8C00"
+GREEN = "#00FF88"
+RED = "#FF4444"
+WHITE = "#FFFFFF"
+GRAY = "#999977"
+PURPLE = "#9370DB"
+CYAN = "#00CED1"
 
 MANTRAS = """॥ ॐ श्री गणेशाय नमः ि॥
 श्री शिवाय नमस्तुभ्यं
@@ -28,547 +30,279 @@ MANTRAS = """॥ ॐ श्री गणेशाय नमः ि॥
 लक्ष्मी कुबेर की कृपा ि॥
 शुभं करोति कल्याणम् ि॥"""
 
+MODE_COLORS = {
+    "NORMAL": WHITE, "EXPIRY": ORANGE, "SAFE": CYAN, "AGGRESSIVE": GREEN,
+    "KILL": RED, "OBSERVE": PURPLE, "WAIT": GRAY, "AI_LEARN": PURPLE
+}
+
+SYMBOLS_LIST = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX", "BANKEX", "CRUDEOIL", "NATURALGAS"]
+
+
 class JssDesktop:
     def __init__(self, root):
         self.root = root
         self.root.title("॥ Jss Wealthtech - जय श्री सांवरीया सेठ ि॥")
-        self.root.geometry("1400x900")
+        self.root.geometry("1400x920")
         self.root.configure(bg=BG)
-        self.root.minsize(1200, 800)
-        
-        self.base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.engine = None
+        self.root.resizable(True, True)
+
+        self.kotak = None
+        self.tg_client = None # Direct Telethon Client
         self.running = False
-        
-        # YAHAN PAPER MODE FIXED HAI (CHANGE NAHI HOGA)
-        self.auto_var = BooleanVar(value=True)
-        self.paper_var = BooleanVar(value=True)
-        
-        self.images = {}
-        self._load_images()
-        
-        self._build_header()
-        self._build_main()
-        self._build_footer()
-        
-        # Engine init hone ke 2 second baad AUTO START karega
-        self.root.after(2000, self._init_engine)
 
-    def _load_images(self):
-        img_path = os.path.join(self.base, 'images')
-        files = {
-            'ganesh': 'ganesh.png', 'swastik': 'swastik.png', 'shubh': 'shubh.png',
-            'om': 'om.png', 'laxmi_kuber': 'laxmi_kuber.png', 'bell': 'bell.png',
-            'kalash': 'kalash.png', 'mor_pankh': 'mor_pankh.png', 'golden_fish': 'golden_fisk.png',
-            'hanging_deepak': 'hanging_deepak.png', 'shyam_baba': 'shyam_baba.png', 'yantra': 'yantra.png',
-            'ai_robot': 'ai_robot.jpg', 'ai_analyst': 'ai_robot_analyst.png',
-            'bull': 'market_bull.png', 'bear': 'market_bear.png',
-        }
-        for key, fname in files.items():
-            path = os.path.join(img_path, fname)
-            if os.path.exists(path):
-                try:
-                    self.images[key] = Image.open(path)
-                except:
-                    pass
+        self._build_ui()
+        self.root.after(3000, self._auto_start)
 
-    def _get_img(self, key, size=(60, 60)):
-        if key in self.images:
-            try:
-                img = self.images[key].resize(size, Image.Resampling.LANCZOS)
-                return ImageTk.ImageTk(img)
-            except:
-                pass
-        return None
-
-    def _build_header(self):
-        header = Frame(self.root, bg=BG2, height=180)
-        header.pack(fill=X, padx=5, pady=(5, 0))
-        header.pack_propagate(False)
-        
-        top = Frame(header, bg=BG2)
-        top.pack(fill=X, pady=5)
-        
-        left = Frame(top, bg=BG2, width=200)
-        left.pack(side=LEFT, padx=20)
-        swastik_img = self._get_img('swastik', (50, 50))
-        if swastik_img:
-            lbl = Label(left, image=swastik_img, bg=BG2)
-            lbl.image = swastik_img
-            lbl.pack()
-        else:
-            Label(left, text="स्वस्तिक", font=("Arial", 20), fg=GOLD, bg=BG2).pack()
-        Label(left, text="शुभ", font=("Arial", 16, "bold"), fg=GOLD, bg=BG2).pack(pady=(5,0))
-        
-        center = Frame(top, bg=BG2)
-        center.pack(expand=True)
-        ganesh_img = self._get_img('ganesh', (100, 100))
-        if ganesh_img:
-            lbl = Label(center, image=ganesh_img, bg=BG2)
-            lbl.image = ganesh_img
-            lbl.pack()
-        else:
-            Label(center, text="🙏", font=("Arial", 60), bg=BG2).pack()
-        
-        right = Frame(top, bg=BG2, width=200)
-        right.pack(side=RIGHT, padx=20)
-        Label(right, text="लाभी", font=("Arial", 16, "bold"), fg=GOLD, bg=BG2).pack(pady=(0,5))
-        shubh_img = self._get_img('shubh', (50, 50))
-        if shubh_img:
-            lbl = Label(right, image=shubh_img, bg=BG2)
-            lbl.image = shubh_img
-            lbl.pack()
-        else:
-            Label(right, text="शुभ", font=("Arial", 20), fg=GOLD, bg=BG2).pack()
-        
-        robot_img = self._get_img('ai_robot', (40, 40))
-        if robot_img:
-            lbl = Label(right, image=robot_img, bg=BG2)
-            lbl.image = robot_img
-            lbl.pack(pady=5)
-        
-        mantra_frame = Frame(header, bg=BG2)
-        mantra_frame.pack(fill=X, pady=2)
-        Label(mantra_frame, text=MANTRAS, font=("Arial", 10), fg=GOLD, bg=BG2, justify=CENTER).pack()
-
-    def _build_main(self):
+    def _build_ui(self):
         main = Frame(self.root, bg=BG)
         main.pack(fill=BOTH, expand=True, padx=5, pady=5)
-        
-        left = Frame(main, bg=BG2, width=250)
+
+        top = Frame(main, bg=BG2, height=60)
+        top.pack(fill=X, pady=(0, 5))
+        top.pack_propagate(False)
+
+        ganesh = Frame(top, bg=BG2)
+        ganesh.pack(side=LEFT, padx=15)
+        Label(ganesh, text="🙏🙏", font=("Arial", 24), bg=BG2, fg=GOLD).pack()
+
+        title = Frame(top, bg=BG2)
+        title.pack(side=LEFT, expand=True)
+        Label(title, text="॥ जय श्री सांवरीया सेठ ि॥", font=("Arial", 17, "bold"), bg=BG2, fg=GOLD).pack()
+        Label(title, text="JSS WEALTHTECH V8.0", font=("Arial", 9), bg=BG2, fg=DARK_GOLD).pack()
+
+        self.lbl_mode = Label(top, text="OBSERVE", font=("Arial", 13, "bold"), bg=BG2, fg=PURPLE)
+        self.lbl_mode.pack(side=LEFT, padx=15)
+
+        self.lbl_tg = Label(top, text="❌ TG", font=("Arial", 10), bg=BG2, fg=RED)
+        self.lbl_tg.pack(side=RIGHT, padx=10)
+        self.lbl_kotak = Label(top, text="❌ Kotak", font=("Arial", 10), bg=BG2, fg=RED)
+        self.lbl_kotak.pack(side=RIGHT, padx=10)
+
+        mid = Frame(main, bg=BG)
+        mid.pack(fill=BOTH, expand=True, pady=5)
+
+        left = Frame(mid, bg=BG2, width=200)
         left.pack(side=LEFT, fill=Y, padx=(0, 5))
         left.pack_propagate(False)
-        self._build_controls(left)
-        self._build_divine_gallery(left)
-        
-        center = Frame(main, bg=BG)
+
+        m_box = Frame(left, bg=BG3, padx=6, pady=6)
+        m_box.pack(fill=X, padx=6, pady=6)
+        Label(m_box, text="॥ MANTRAS ि॥", font=("Arial", 10, "bold"), bg=BG3, fg=GOLD).pack()
+        txt = Text(m_box, bg=BG3, fg=GOLD, font=("Arial", 9), wrap=WORD, relief=FLAT, height=7, bd=0)
+        txt.insert("1.0", MANTRAS)
+        txt.config(state=DISABLED)
+        txt.pack()
+
+        Frame(left, bg=GOLD, height=2).pack(fill=X, padx=8, pady=6)
+
+        i_box = Frame(left, bg=BG3, padx=6, pady=6)
+        i_box.pack(fill=X, padx=6)
+        Label(i_box, text="📊 INFO", font=("Arial", 10, "bold"), bg=BG3, fg=GOLD).pack(anchor="w", pady=(0, 5))
+
+        self.lbl_day = Label(i_box, text="Day: -", font=("Arial", 9), bg=BG3, fg=WHITE, anchor="w")
+        self.lbl_day.pack(fill=X, pady=1)
+        self.lbl_time = Label(i_box, text="Time: -", font=("Arial", 9), bg=BG3, fg=WHITE, anchor="w")
+        self.lbl_time.pack(fill=X, pady=1)
+        self.lbl_expiry = Label(i_box, text="Expiry: -", font=("Arial", 9), bg=BG3, fg=WHITE, anchor="w")
+        self.lbl_expiry.pack(fill=X, pady=1)
+        self.lbl_sentiment = Label(left, text="😐 NEUTRAL", font=("Arial", 11, "bold"), bg=BG2, fg=WHITE)
+        self.lbl_sentiment.pack(pady=8)
+
+        center = Frame(mid, bg=BG)
         center.pack(side=LEFT, fill=BOTH, expand=True, padx=5)
-        self._build_live_rates(center)
-        self._build_status_panel(center)
-        
-        right = Frame(main, bg=BG2, width=350)
+
+        r_hdr = Frame(center, bg=BG3)
+        r_hdr.pack(fill=X, pady=(0, 3))
+        Label(r_hdr, text="📈 LIVE RATES", font=("Arial", 11, "bold"), bg=BG3, fg=GOLD).pack(side=LEFT, padx=10, pady=5)
+
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("Treeview", background=BG2, foreground=WHITE, fieldbackground=BG2, font=("Arial", 9), rowheight=24)
+        style.configure("Treeview.Heading", background=BG3, foreground=GOLD, font=("Arial", 9, "bold"), rowheight=25)
+
+        cols = ("Symbol", "LTP", "Change", "Chg%", "High", "Low", "Status")
+        self.rates_tree = ttk.Treeview(center, columns=cols, show="headings", height=8)
+        for col in cols:
+            self.rates_tree.heading(col, text=col)
+            self.rates_tree.column(col, width=105, anchor="center")
+        for sym in SYMBOLS_LIST:
+            self.rates_tree.insert("", END, values=(sym, "0.00", "0.00", "0.00%", "0.00", "0.00", "⏳"))
+        self.rates_tree.pack(fill=X, pady=(0, 8))
+
+        t_hdr = Frame(center, bg=BG3)
+        t_hdr.pack(fill=X)
+        Label(t_hdr, text="📊 CURRENT TRADE", font=("Arial", 11, "bold"), bg=BG3, fg=GOLD).pack(side=LEFT, padx=10, pady=5)
+        Label(t_hdr, text="🔒 PAPER", font=("Arial", 9, "bold"), bg=BG3, fg=RED).pack(side=RIGHT, padx=10)
+        self.lbl_trade = Label(center, text="No Open Trade", font=("Arial", 11), bg=BG2, fg=GRAY, anchor="w", padx=10, pady=15)
+        self.lbl_trade.pack(fill=X)
+
+        right = Frame(mid, bg=BG2, width=200)
         right.pack(side=RIGHT, fill=Y, padx=(5, 0))
         right.pack_propagate(False)
-        self._build_ai_panel(right)
-        self._build_log(right)
 
-    def _build_controls(self, parent):
-        Label(parent, text="⚙️ CONTROLS", font=("Arial", 12, "bold"), fg=GOLD, bg=BG2).pack(pady=10)
-        
-        btn_frame = Frame(parent, bg=BG2)
-        btn_frame.pack(fill=X, padx=10)
-        
-        # START BUTTON DISABLED HAI (AUTO-START HAI)
-        self.btn_start = Button(btn_frame, text="⏳ AUTO-STARTING...", font=("Arial", 11, "bold"),
-                               bg=GRAY, fg=BLACK, width=10, state=DISABLED)
-        self.btn_start.grid(row=0, column=0, padx=5, pady=5)
-        
-        self.btn_stop = Button(btn_frame, text="⏹️ STOP", font=("Arial", 11, "bold"),
-                              bg=RED, fg=WHITE, command=self._stop, width=10, state=DISABLED)
-        self.btn_stop.grid(row=0, column=1, padx=5, pady=5)
-        
-        auto_frame = Frame(parent, bg=BG2)
-        auto_frame.pack(fill=X, padx=10, pady=5)
-        Checkbutton(auto_frame, text="Auto Trade", variable=self.auto_var,
-                   font=("Arial", 10), fg=WHITE, bg=BG2, selectcolor=BG3,
-                   command=self._toggle_auto).pack(side=LEFT)
-        self.lbl_auto = Label(auto_frame, text="ON", font=("Arial", 10, "bold"), fg=GREEN, bg=BG2)
-        self.lbl_auto.pack(side=RIGHT)
-        
-        # PAPER MODE LOCK (DISABLED - CHANGE NAHI HOGA)
-        paper_frame = Frame(parent, bg=BG2)
-        paper_frame.pack(fill=X, padx=10, pady=5)
-        Checkbutton(paper_frame, text="🔒 Paper Mode (Locked)", variable=self.paper_var,
-                   font=("Arial", 10), fg=GRAY, bg=BG2, selectcolor=BG3, state=DISABLED).pack(side=LEFT)
-        self.lbl_paper = Label(paper_frame, text="🔒 LOCKED", font=("Arial", 10, "bold"), fg=CYAN, bg=BG2)
-        self.lbl_paper.pack(side=RIGHT)
-        
-        Button(parent, text="🔧 Settings", font=("Arial", 10),
-               bg=PURPLE, fg=WHITE, command=self._open_settings, width=20).pack(pady=10)
-        
-        cap_frame = LabelFrame(parent, text="💰 CAPITAL", font=("Arial", 10, "bold"),
-                              fg=GOLD, bg=BG2, labelanchor='n')
-        cap_frame.pack(fill=X, padx=10, pady=10)
-        
-        self.lbl_capital = Label(cap_frame, text="₹1,000", font=("Arial", 16, "bold"),
-                                fg=GREEN, bg=BG2)
-        self.lbl_capital.pack(pady=5)
-        
-        self.lbl_pnl = Label(cap_frame, text="P&L: ₹0", font=("Arial", 11),
-                            fg=WHITE, bg=BG2)
+        c_box = Frame(right, bg=BG3, padx=8, pady=8)
+        c_box.pack(fill=X, padx=8, pady=8)
+        Label(c_box, text="💰 CAPITAL", font=("Arial", 11, "bold"), bg=BG3, fg=GOLD).pack()
+        self.lbl_capital = Label(c_box, text="₹1,000.00", font=("Arial", 18, "bold"), bg=BG3, fg=GREEN)
+        self.lbl_capital.pack(pady=3)
+        self.lbl_pnl = Label(c_box, text="P&L: ₹0.00", font=("Arial", 12), bg=BG3, fg=GREEN)
         self.lbl_pnl.pack()
-        
-        self.lbl_peak = Label(cap_frame, text="Peak: ₹1,000", font=("Arial", 9),
-                             fg=GRAY, bg=BG2)
-        self.lbl_peak.pack(pady=(0, 5))
 
-    def _build_divine_gallery(self, parent):
-        Label(parent, text="🙏 DIVINE GALLERY", font=("Arial", 10, "bold"),
-              fg=GOLD, bg=BG2).pack(pady=(10, 5))
-        
-        gallery = Frame(parent, bg=BG2)
-        gallery.pack(fill=X, padx=10)
-        
-        divine_imgs = ['om', 'laxmi_kuber', 'bell', 'kalash', 'mor_pankh', 
-                       'golden_fish', 'hanging_deepak', 'shyam_baba', 'yantra']
-        emojis = ['🕉️', '🙏', '🔔', '🪷', '🦚', '🐟', '🪔', '🕉️', '🔮']
-        
-        for i, key in enumerate(divine_imgs):
-            img = self._get_img(key, (35, 35))
-            if img:
-                lbl = Label(gallery, image=img, bg=BG2)
-                lbl.image = img
-                lbl.grid(row=i//3, column=i%3, padx=2, pady=2)
-            else:
-                Label(gallery, text=emojis[i], font=("Arial", 18), bg=BG2).grid(row=i//3, column=i%3, padx=2, pady=2)
+        Frame(right, bg=GOLD, height=2).pack(fill=X, padx=8, pady=10)
 
-    def _build_live_rates(self, parent):
-        Label(parent, text="📊 LIVE MARKET RATES", font=(" Arial", 12, "bold"),
-              fg=GOLD, bg=BG).pack(pady=5)
-        
-        style = ttk.Style()
-        style.theme_use('clam')
-        style.configure("Custom.Treeview", background=BG3, foreground=WHITE,
-                        fieldbackground=BG3, font=("Arial", 10))
-        style.configure("Custom.Treeview.Heading", background=BG2, foreground=GOLD,
-                        font=("Arial", 10, "bold"))
-        
-        cols = ('Symbol', 'LTP', 'Change', 'Chg%', 'High', 'Low', 'Status')
-        self.rates_tree = ttk.Treeview(parent, columns=cols, show='headings',
-                                       style="Custom.Treeview", height=8)
-        
-        widths = [100, 90, 80, 70, 80, 80, 100]
-        for col, w in zip(cols, widths):
-            self.rates_tree.heading(col, text=col)
-            self.rates_tree.column(col, width=w, anchor='center')
-        
-        self.rates_tree.pack(fill=X, padx=10, pady=5)
-        
-        symbols = ['NIFTY', 'BANKNIFTY', 'FINNIFTY', 'MIDCPNIFTY', 'SENSEX', 
-                   'BANKEX', 'CRUDEOIL', 'NATURALGAS']
-        for sym in symbols:
-            self.rates_tree.insert('', END, values=(sym, '-', '-', '-', '-', '-', '⏳'))
+        mo_box = Frame(right, bg=BG3, padx=8, pady=8)
+        mo_box.pack(fill=X, padx=8)
+        Label(mo_box, text="🔧 MODE", font=("Arial", 10, "bold"), bg=BG3, fg=GOLD).pack(pady=(0, 5))
+        Label(mo_box, text="🔒 PAPER MODE", font=("Arial", 13, "bold"), bg=BG3, fg=RED).pack()
 
-    def _build_status_panel(self, parent):
-        status_frame = LabelFrame(parent, text="⚡ SYSTEM STATUS", font=("Arial", 11, "bold"),
-                                 fg=GOLD, bg=BG2, labelanchor='n')
-        status_frame.pack(fill=X, padx=10, pady=10)
-        
-        grid = Frame(status_frame, bg=BG2)
-        grid.pack(fill=X, padx=10, pady=10)
-        
-        labels = [
-            ('Mode:', 'lbl_mode'), ('Day:', 'lbl_day'),
-            ('Time Window:', 'lbl_time'), ('Expiry:', 'lbl_expiry'),
-            ('Market:', 'lbl_market'), ('Confidence:', 'lbl_conf'),
-            ('Momentum:', 'lbl_momentum'), ('Buyer/Seller:', 'lbl_bs'),
-            ('Kotak:', 'lbl_kotak'), ('Telegram:', 'lbl_tg'),
-        ]
-        
-        for i, (text, attr) in enumerate(labels):
-            row, col = i // 2, (i % 2) * 2
-            Label(grid, text=text, font=("Arial", 9), fg=GRAY, bg=BG2).grid(
-                row=row, column=col, sticky='w', padx=5, pady=2)
-            lbl = Label(grid, text="-", font=("Arial", 9, "bold"), fg=WHITE, bg=BG2)
-            lbl.grid(row=row, column=col+1, sticky='w', padx=5, pady=2)
-            setattr(self, attr, lbl)
-        
-        trade_frame = LabelFrame(parent, text="📈 CURRENT TRADE", font=("Arial", 11, "bold"),
-                                fg=GOLD, bg=BG2, labelanchor='n')
-        trade_frame.pack(fill=X, padx=10, pady=5)
-        
-        self.lbl_trade = Label(trade_frame, text="No Open Trade", font=("Arial", 10),
-                              fg=GRAY, bg=BG2, justify=LEFT)
-        self.lbl_trade.pack(padx=10, pady=10, anchor='w')
+        bottom = Frame(main, bg=BG2, height=180)
+        bottom.pack(fill=X, pady=(5, 0))
+        bottom.pack_propagate(False)
+        Label(bottom, text="📋 LOG", font=("Arial", 10, "bold"), bg=BG3, fg=GOLD, anchor="w").pack(fill=X, padx=10, pady=3)
+        self.log_text = Text(bottom, bg=BG, fg=GREEN, font=("Consolas", 9), relief=FLAT, wrap=WORD, bd=0)
+        self.log_text.pack(fill=BOTH, expand=True, padx=8, pady=(0, 5))
 
-    def _build_ai_panel(self, parent):
-        Label(parent, text="🤖 AI ANALYSIS", font=("Arial", 12, "bold"),
-              fg=GOLD, bg=BG2).pack(pady=10)
-        
-        robot_img = self._get_img('ai_analyst', (80, 80))
-        if robot_img:
-            lbl = Label(parent, image=robot_img, bg=BG2)
-            lbl.image = robot_img
-            lbl.pack(pady=5)
-        
-        self.lbl_sentiment = Label(parent, text="😐 NEUTRAL", font=("Arial", 14, "bold"),
-                                  fg=WHITE, bg=BG2)
-        self.lbl_sentiment.pack()
-        
-        tg_frame = LabelFrame(parent, text="📱 TELEGRAM SIGNALS", font=("Arial", 10, "bold"),
-                             fg=CYAN, bg=BG2, labelanchor='n')
-        tg_frame.pack(fill=X, padx=10, pady=10)
-        
-        self.lbl_tg_signals = Label(tg_frame, text="No signals", font=("Arial", 9),
-                                   fg=GRAY, bg=BG2, justify=LEFT, wraplength=300)
-        self.lbl_tg_signals.pack(padx=5, pady=5, anchor='w')
-        
-        hist_frame = LabelFrame(parent, text="📋 TRADE HISTORY", font=("Arial", 10, "bold"),
-                               fg=GOLD, bg=BG2, labelanchor='n')
-        hist_frame.pack(fill=X, padx=10, pady=5)
-        
-        self.lbl_history = Label(hist_frame, text="No trades yet", font=("Arial", 9),
-                                fg=GRAY, bg=BG2, justify=LEFT, wraplength=300)
-        self.lbl_history.pack(padx=5, pady=5, anchor='w')
+        Label(self.root, text="॥ जय श्री सांवरीया सेठ ि॥ | Jss Wealthtech V8.0 | 🔒 PAPER MODE", font=("Arial", 9), bg=BG, fg=DARK_GOLD).pack(fill=X, pady=(0, 3))
 
-    def _build_log(self, parent):
-        Label(parent, text="📝 LOG", font=("Arial", 10, "bold"),
-              fg=GOLD, bg=BG2).pack(pady=5)
-        
-        log_frame = Frame(parent, bg=BG3)
-        log_frame.pack(fill=BOTH, expand=True, padx=10, pady=5)
-        
-        self.log_text = Text(log_frame, bg=BG3, fg=WHITE, font=("Consolas", 8),
-                            wrap=WORD, state=DISABLED)
-        scrollbar = Scrollbar(log_frame, command=self.log_text.yview)
-        self.log_text.configure(yscrollcommand=scrollbar.set)
-        
-        scrollbar.pack(side=RIGHT, fill=Y)
-        self.log_text.pack(fill=BOTH, expand=True)
+        self._log("🙏 ॥ जय श्री सांवरीया सेठ ि॥")
+        self._log("ि॥ श्री गणेशाय नमः ि॥")
+        self._log("Software Loaded")
+        self._log("⏳ Auto-Starting in 3 seconds...")
 
-    def _build_footer(self):
-        footer = Frame(self.root, bg=BG2, height=30)
-        footer.pack(fill=X, padx=5, pady=(0, 5))
-        
-        self.lbl_footer = Label(footer, text="॥ जय श्री सांवरीया सेठ ि॥ | Jss Wealthtech V8.0 | 🔒 PAPER MODE LOCKED",
-                               font=("Arial", 9), fg=GOLD, bg=BG2)
-        self.lbl_footer.pack(expand=True)
-
-    def _show_otp_popup(self, title, callback):
-        win = Toplevel(self.root)
-        win.title(title)
-        win.geometry("400x200")
-        win.configure(bg=BG2)
-        win.transient(self.root)
-        win.grab_set()
-        
-        Label(win, text="🔐 OTP AAYA HAI", font=("Arial", 14, "bold"), fg=GOLD, bg=BG2).pack(pady=20)
-        
-        entry = Entry(win, font=("Arial", 16), bg=BG3, fg=WHITE, insertbackground=WHITE, justify='center')
-        entry.pack(pady=10, ipadx=20, ipady=10)
-        entry.focus_set()
-        
-        def submit():
-            code = entry.get().strip()
-            if code:
-                callback(code)
-                win.destroy()
-            else:
-                messagebox.showwarning("Error", "OTP enter karo!")
-        
-        Button(win, text="✅ SUBMIT OTP", font=("Arial", 12, "bold"),
-               bg=GREEN, fg=BLACK, command=submit, width=15).pack(pady=10)
-        
-        win.bind('<Return>', lambda e: submit())
-
-    def _init_engine(self):
+    def _log(self, msg):
         try:
-            from core.engine import TradingEngine
-            from brokers.kotak_neo import KotakNeo
-            from brokers.session_manager import SessionManager
-            from core.option_chain import OptionChain
-            from core.indicators import Indicators
-            from core.capital import CapitalManager
-            from core.risk import RiskManager
-            from telegram.bot import TelegramBot
-            from telegram.reader import TelegramReader
-            from telegram.parser import SignalParser
-            from strategies import load_all_strategies
-            
-            cfg = self._load_config()
-            session = SessionManager()
-            kotak = KotakNeo(cfg, session)
-            oc = OptionChain()
-            ind = Indicators()
-            cap = CapitalManager(float(cfg.get('trategy', {}).get('capital', 1000) or 1000))
-            risk = RiskManager(cfg)
-            bot = TelegramBot(cfg)
-            reader = TelegramReader(cfg)
-            parser = SignalParser()
-            strategies = load_all_strategies()
-            
-            # OTP POPUP CONNECTIONS YAHAN HAI
-            kotak.otp_callback = lambda: self.root.after(0, lambda: self._show_popup("🔑 KOTAK NEO OTP", kotak.set_otp_code))
-            reader.otp_callback = lambda: self.root.after(0, lambda: self._show_popup("📱 TELEGRAM OTP", reader.set_otp_code))
-            
-            self.engine = TradingEngine(cfg, kotak, oc, ind, cap, risk, bot, reader, parser, strategies)
-            self.engine.on_log = self._log
-            self.engine.on_update = self._update_ui
-            self.engine.on_trade = self._on_trade
-            
-            self._log("✅ Engine initialized")
-            
-            # YAHAN AUTO START HAI (5 SECOND BAAD)
-            self.root.after(5000, self._auto_start)
-            
-        except Exception as e:
-            self._log(f"❌ Engine init error: {e}")
-
-    def _update_ui(self, status):
-        # status is from TradingEngine._get_status()
-        try:
-            self.lbl_mode.config(text=status.get('mode', '-'))
-            self.lbl_day.config(text=status.get('day_type', '-'))
-            self.lbl_time.config(text=status.get('time_window', '-'))
-            self.lbl_expiry.config(text=status.get('expiry_symbol', '-'))
-            self.lbl_market.config(text=status.get('market_condition', '-'))
-            self.lbl_conf.config(text=f"{status.get('confidence', 0):.2f}")
-            self.lbl_momentum.config(text=f"{status.get('momentum', 0):.2f}")
-            self.lbl_bs.config(text=f"{status.get('buyer_seller', 0):.2f}")
-            self.lbl_kotak.config(text="CONNECTED" if status.get('kotak_connected') else "DISCONNECTED")
-            self.lbl_tg.config(text=status.get('tg_reader_connected', '-'))
-
-            # Update live rates table
-            ltp_data = status.get('ltp', {})
-            for iid in self.rates_tree.get_children():
-                values = list(self.rates_tree.item(iid, 'values'))
-                symbol = values[0]
-                m = ltp_data.get(symbol, {})
-                values[1] = f"{m.get('ltp', '-'):.2f}" if m.get('ltp') is not None else '-'
-                values[2] = f"{m.get('change', '-'):.2f}" if m.get('change') is not None else '-'
-                values[3] = f"{m.get('change_pct', '-'):.2f}" if m.get('change_pct') is not None else '-'
-                values[4] = f"{m.get('high', '-'):.2f}" if m.get('high') is not None else '-'
-                values[5] = f"{m.get('low', '-'):.2f}" if m.get('low') is not None else '-'
-                values[6] = '✅' if status.get('kotak_connected') else '⛔'
-                self.rates_tree.item(iid, values=values)
-        except Exception as e:
-            self._log(f"❌ UI update failed: {e}")
-
-    def _show_popup(self, title, callback):
-        """Shortcut for popup"""
-        self.root.after(0, lambda: self._show_otp_popup(title, callback))
+            self.log_text.config(state=NORMAL)
+            ts = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%H:%M:%S")
+            self.log_text.insert(END, "[" + ts + "] " + msg + "\n")
+            self.log_text.see(END)
+            self.log_text.config(state=DISABLED)
+        except Exception:
+            pass
 
     def _auto_start(self):
-        """AUTO START - Button dabane ki zaroorat nahi"""
-        if not self.engine:
-            self._log("❌ Engine not ready, retrying in 5 sec...")
-            self.root.after(5000, self._auto_start)
-            return
+        self._log("🔄 Auto-Starting...")
+        self._connect_kotak()
+        self.root.after(5000, self._connect_telegram)
+
+    def _connect_kotak(self):
+        self._log("🔌 Connecting Kotak...")
+        try:
+            from brokers.kotak_neo import KotakNeo
+            self.kotak = KotakNeo()
+            self.kotak.set_log_callback(self._log)
+            threading.Thread(target=self._kotak_thread, daemon=True).start()
+        except Exception as e:
+            self._log("❌ Kotak: " + str(e))
+
+    def _kotak_thread(self):
+        try:
+            ok = self.kotak.connect()
+            if ok:
+                self.root.after(0, lambda: self._log("🎉 Kotak Connected!"))
+                self.root.after(0, lambda: self.lbl_kotak.config(text="✅ Kotak", fg=GREEN))
+                self.running = True
+                self.root.after(0, self._ltp_loop)
+            else:
+                msg = self.kotak.status_msg
+                self.root.after(0, lambda m=msg: self._log("❌ Kotak: " + m))
+                self.root.after(0, lambda: self.lbl_kotak.config(text="❌ Kotak", fg=RED))
+        except Exception as e:
+            self.root.after(0, lambda: self._log("❌ Kotak Error: " + str(e)))
+
+    # =========================================================================
+    # --- ✅ FIXED: TELEGRAM CONSOLE MODE (ASYNCIO FIX) ---
+    # =========================================================================
+    def _connect_telegram(self):
+        self._log("📱 Initializing Telegram (Console Mode)...")
+        # Thread start karenge taake GUI freeze na ho
+        threading.Thread(target=self._tg_thread_console, daemon=True).start()
+
+    def _tg_thread_console(self):
+        try:
+            from telethon.sync import TelegramClient
             
-        self._log("🔌 Auto-connecting Kotak & Telegram...")
-        
-        def bg_connect():
-            if self.engine.kotak and not self.engine.kotak.connected:
-                self.engine.kotak.try_login()
-            if self.engine.tg_reader and not self.engine.tg_reader.connected:
-                self.engine.tg_reader.try_connect()
-            # Ab actual start karo
-            self.root.after(0, self._actual_start)
-        
-        threading.Thread(target=bg_connect, daemon=True).start()
+            # ⚠️ ZARURI: API ID aur HASH yahan daalo
+            # Agar nahi pata to my.telegram.org se le lein
+            API_ID = 37698803          # <--- Yahan Number daalo (e.g. 2834928)
+            API_HASH = '4af1e926406dece6224947d6d66b3ee7'  # <--- Yahan Hash daalo (e.g. 'a1b2c3d4...')
 
-    def _actual_start(self):
-        self.engine.start()
-        self.running = True
-        self.btn_start.config(text="▶️ RUNNING", bg=GREEN, state=DISABLED)
-        self.btn_stop.config(state=NORMAL)
-        self._log("🚀 Auto-Started successfully!")
-        self._update_loop()
+            # Async function define kar rahe hain
+            async def connect_task():
+                client = TelegramClient('jss_console_session', API_ID, API_HASH)
+                await client.connect()
 
-    def _start(self):
-        """Manual Start (Agar auto fail ho jaye toh manual use karo)"""
-        if not self.engine:
-            messagebox.showwarning("Error", "Engine not initialized!")
+                if not client.is_user_authorized():
+                    # GUI ko batao ki user se input maanga jayega
+                    self.root.after(0, lambda: self._log("⚠️ New Login. CHECK CMD WINDOW."))
+                    
+                    print("\n" + "="*50)
+                    print("📲 TELEGRAM LOGIN (CONSOLE MODE)")
+                    print("="*50)
+                    phone = input("📱 Enter Phone (e.g. +91...): ")
+                    await client.send_code_request(phone)
+                    
+                    print("🔑 Check Telegram App for code.")
+                    otp = input("🔑 Enter OTP here: ")
+                    await client.sign_in(phone, otp)
+                    print("✅ Logged In!")
+                else:
+                    print("✅ Already Logged In via Session.")
+
+                # Client save karenge agar baad mein use karna ho
+                self.tg_client = client
+                
+                # GUI update karenge
+                self.root.after(0, lambda: self._log("🎉 Telegram Connected!"))
+                self.root.after(0, lambda: self.lbl_tg.config(text="✅ TG", fg=GREEN))
+
+            # Async task ko run karenge (Isse Event Loop error solve hoga)
+            asyncio.run(connect_task())
+
+        except Exception as e:
+            self.root.after(0, lambda: self._log("❌ TG Error: " + str(e)))
+            print(f"Error Details: {e}")
+
+    def _ltp_loop(self):
+        if not self.running or not self.kotak or not self.kotak.logged_in:
             return
-        self._actual_start()
+        try:
+            items = self.rates_tree.get_children()
+            for i, sym in enumerate(SYMBOLS_LIST):
+                data = self.kotak.get_ltp(sym)
+                if i < len(items):
+                    if data and data.get('ltp', 0) > 0:
+                        d = data
+                        self.rates_tree.item(items[i], values=(
+                            sym, "{:.2f}".format(d['ltp']), "{:+.2f}".format(d['change']),
+                            "{:+.2f}%".format(d['change_pct']), "{:.2f}".format(d['high']),
+                            "{:.2f}".format(d['low']), "✅ LIVE"
+                        ))
 
-    def _stop(self):
-        if self.engine:
-            self.engine.stop()
-        self.running = False
-        self.btn_start.config(text="▶️ RESTART", bg=GREEN, state=NORMAL)
-        self.btn_stop.config(state=DISABLED)
-        self._log("🛑 Engine stopped")
+            now = datetime.now(ZoneInfo("Asia/Kolkata"))
+            t = now.hour * 60 + now.minute
+            day = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"][now.weekday()]
+            tw = "MARKET CLOSED"
+            if 9*60+15 <= t < 9*60+30: tw = "OPENING"
+            elif 9*60+30 <= t < 11*60: tw = "TRENDING"
+            elif 13*60+30 <= t < 15*60+15: tw = "CLOSING"
 
-    def _toggle_auto(self):
-        v = self.auto_var.get()
-        self.lbl_auto.config(text="ON" if v else "OFF", fg=GREEN if v else RED)
+            exp_map = {"MON": "FINNIFTY", "TUE": "BANKNIFTY", "WED": "MIDCPNIFTY", "THU": "NIFTY", "FRI": "None", "SAT": "None", "SUN": "None"}
+            mode = "OBSERVE" if day == "MON" else ("EXPIRY" if exp_map.get(day, "None") != "None" else ("WAIT" if tw == "MARKET CLOSED" else "NORMAL"))
 
-    def _toggle_paper(self):
-        pass # YEH AB LOCKED HAI - KUCH NAHI HOGA
+            self.lbl_day.config(text="Day: " + day)
+            self.lbl_time.config(text="Time: " + tw)
+            self.lbl_expiry.config(text="Expiry: " + exp_map.get(day, "None"))
+            self.lbl_mode.config(text=mode, fg=MODE_COLORS.get(mode, WHITE))
+        except Exception:
+            pass
+        self.root.after(1000, self._ltp_loop)
 
-    def _open_settings(self):
-        win = Toplevel(self.root)
-        win.title("🔧 Settings")
-        win.geometry("600x700")
-        win.configure(bg=BG2)
-        win.transient(self.root)
-        win.grab_set()
-        
-        cfg = self._load_config()
-        notebook = ttk.Notebook(win)
-        notebook.pack(fill=BOTH, expand=True, padx=10, pady=10)
-        
-        # Kotak tab
-        kotak_frame = Frame(notebook, bg=BG2)
-        notebook.add(kotak_frame, text="Kotak Neo")
-        kotak_entries = {}
-        for field in ['consumer_key', 'mobile', 'password', 'totp_secret']:
-            f = Frame(kotak_frame, bg=BG2)
-            f.pack(fill=X, padx=20, pady=5)
-            Label(f, text=field.replace('_', ' ').title(), fg=WHITE, bg=BG2, width=15, anchor='w').pack(side=LEFT)
-            e = Entry(f, bg=BG3, fg=WHITE, insertbackground=WHITE)
-            e.insert(0, cfg.get('kotak_neo', {}).get(field, ''))
-            e.pack(side=LEFT, fill=X, expand=True, padx=5)
-            kotak_entries[field] = e
-        
-        # Telegram tab
-        tg_frame = Frame(notebook, bg=BG2)
-        notebook.add(tg_frame, text="Telegram")
-        tg_entries = {}
-        for field in ['bot_token', 'chat_id', 'api_id', 'api_hash', 'phone']:
-            f = Frame(tg_frame, bg=BG2)
-            f.pack(fill=X, padx=20, pady=5)
-            Label(f, text=field.replace('_', ' ').title(), fg=WHITE, bg=BG2, width=15, anchor='w').pack(side=LEFT)
-            e = Entry(f, bg=BG3, fg=WHITE, insertbackground=WHITE)
-            e.insert(0, cfg.get('telegram', {}).get(field, ''))
-            e.pack(side=LEFT, fill=X, expand=True, padx=5)
-            tg_entries[field] = e
-        
-        # Groups tab
-        groups_frame = Frame(notebook, bg=BG2)
-        notebook.add(groups_frame, text="Groups")
-        canvas = Canvas(groups_frame, bg=BG2)
-        scrollbar = Scrollbar(groups_frame, orient="vertical", command=canvas.yview)
-        scroll_frame = Frame(canvas, bg=BG2)
-        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        groups = cfg.get('telegram_groups', [])
-        group_entries = []
-        for i, group in enumerate(groups):
-            gf = LabelFrame(scroll_frame, text=group.get('name', f'Group {i+1}'), fg=GOLD, bg=BG2)
-            gf.pack(fill=X, padx=10, pady=5)
-            for field in ['hash_id', 'chat_id']:
-                f = Frame(gf, bg=BG2)
-                f.pack(fill=X, padx=5, pady=2)
-                Label(f, text=field, fg=WHITE, bg=BG2, width=10, anchor='w').pack(side=LEFT)
-                e = Entry(f, bg=BG3, fg=WHITE, insertbackground=WHITE)
-                e.insert(0, group.get(field, ''))
-                e.pack(side=LEFT, fill=X, expand=True, padx=5)
-                group_entries.append((i, field, e))
-        
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        
-        # Trading tab (PAPER MODE LOCK HAI)
-        trading_frame = Frame(notebook, bg=BG2)
-        notebook.add(trading_frame, text="Trading")
-        trading_fields = [
-            ('capital', 'Initial Capital', 1000),
-            ('max_daily_loss', 'Max Daily Loss', 200),
-            ('max_trades_per_day', 'Max Trades/Day', 5),
-            ('sl_pct', 'SL %', 50),
-            ('target_pct', 'Target %', 100),
-            ('update_interval', 'Update Interval (sec)', 5),
-        ]
-        trading_entries = {}
-        for field, label, default in trading_fields:
-            f = Frame(trading_frame, bg=BG2)
-            f.pack(fill=X, padx=20, pady=5)
-            Label(f, text=label, fg=WHITE, bg=BG2, width=20, anchor='w').pack(side=LEFT)
-            e = Entry(f, bg=BG3, fg=WHITE, insertbackground=WHITE)
-            e.insert(0, str(cfg.get('trading', {}).get(field, default)))
-            e.pack(side=LEFT, padx=5)
-            trading_entries[field] = e
+
+def main():
+    root = Tk()
+    app = JssDesktop(root)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

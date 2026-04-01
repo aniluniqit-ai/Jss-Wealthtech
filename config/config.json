@@ -1,92 +1,36 @@
 {
   "kotak_neo": {
-    "consumer_key": "4330d772-bb66-498d-a4cb-3ae8e8c324a8",
+    "access_token": "4330d772-bb66-498d-a4cb-3ae8e8c324a8",
+    "client_code": "XV3ZT",
     "mobile": "+919509675779",
-    "password": "RamRamSa@#11",
-    "totp_secret": "YYDEDABS3PAAOWLECS3C33GUOM",
-    "access_token": "",
-    "sid": ""
+    "mpin": "112151",
+    "totp_secret": "YYDEDABS3PAAOWLECS3C33GUOM"
+  },
+  "telegram_alerts": {
+    "enabled": true,
+    "bot_token": "",
+    "my_chat_id": ""
   },
   "telegram": {
-    "bot_token": "7996284517:AAEL3r8fgSs2WuX3VBhLiuOINTBy3Rgq8xU",
-    "chat_id": "2079064051",
     "api_id": "37698803",
     "api_hash": "4af1e926406dece6224947d6d66b3ee7",
     "phone": "+919509675779"
   },
   "telegram_groups": [
-    {
-      "name": "FOREX ACADEMY",
-      "hash_id": "#-2001462925",
-      "chat_id": "#-2001462925",
-      "active": true
-    },
-    {
-      "name": "TRADE WITH SOURABH BAJAJ",
-      "hash_id": "#@tradewithsourabhbajaj0",
-      "chat_id": "#@tradewithsourabhbajaj0",
-      "active": true
-    },
-    {
-      "name": "SMT EDUCATION GROUP",
-      "hash_id": "#-1470096877",
-      "chat_id": "#-1470096877",
-      "active": true
-    },
-    {
-      "name": "THE MARKET GURU",
-      "hash_id": "#@themarketguru29",
-      "chat_id": "#@themarketguru29",
-      "active": true
-    },
-    {
-      "name": "PREMIUM LEARNING",
-      "hash_id": "#-2421495601",
-      "chat_id": "#-2421495601",
-      "active": true
-    },
-    {
-      "name": "TRADING MASTERMIND",
-      "hash_id": "#-2123899122",
-      "chat_id": "#-2123899122",
-      "active": true
-    },
-    {
-      "name": "GOLD TRADER SAM",
-      "hash_id": "#-1557229122",
-      "chat_id": "#-1557229122",
-      "active": true
-    },
-    {
-      "name": "BANKNIFTY EXPERT",
-      "hash_id": "#@Banknifty_expert_future_options",
-      "chat_id": "#@Banknifty_expert_future_options",
-      "active": true
-    }
+    {"name": "FOREX ACADEMY", "hash_id": "", "chat_id": "", "active": true},
+    {"name": "TRADE WITH SOURABH BAJAJ", "hash_id": "", "chat_id": "", "active": true},
+    {"name": "SMT - Education Group", "hash_id": "", "chat_id": "", "active": true},
+    {"name": "THE MARKET GURU", "hash_id": "", "chat_id": "", "active": true},
+    {"name": "PREMIUM LEARNING", "hash_id": "", "chat_id": "", "active": true},
+    {"name": "Trading MasterMind", "hash_id": "", "chat_id": "", "active": true},
+    {"name": "GOLD TRADER SAM", "hash_id": "", "chat_id": "", "active": true},
+    {"name": "BANKNIFTY EXPERT", "hash_id": "", "chat_id": "", "active": true}
   ],
   "trading": {
-    "auto_start": true,
-    "auto_start_delay": 5,
-    "lots_per_trade": 1,
-    "update_interval": "5",
-    "auto_trade": true,
     "paper_mode": true,
-    "sl_pct": "50",
-    "target_pct": "100",
-    "capital": "1000",
-    "max_daily_loss": "200",
-    "max_trades_per_day": "5",
-    "max_open_positions": 3,
-    "trailing_sl_pct": 5,
-    "cooldown_seconds": 60,
-    "loss_cooldown_seconds": 120,
-    "partial_exit_pct": 50,
-    "partial_exit_at": 80
-  },
-  "app": {
-    "theme": "divine",
-    "excel_auto": true,
-    "excel_interval": 60,
-    "web_port": 5000
+    "update_interval": 5,
+    "sl_pct": 50,
+    "target_pct": 100,
+    "trailing_sl_pct": 5
   }
 }

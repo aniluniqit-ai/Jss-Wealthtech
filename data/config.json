@@ -1,0 +1,15 @@
+{
+  "kotak_neo": {
+    "consumer_key": "4330d772-bb66-498d-a4cb-3ae8e8c324a8",
+    "consumer_secret": "4330d772-bb66-498d-a4cb-3ae8e8c324a8",
+    "mpin": "112151",
+    "totp_secret": "YYDEDABS3PAAOWLECS3C33GUOM",
+    "mobile": "+919509675779",
+    "access_token": "4330d772-bb66-498d-a4cb-3ae8e8c324a8"
+  },
+  "telegram": {
+    "api_id": "37698803",
+    "api_hash": "4af1e926406dece6224947d6d66b3ee7",
+    "phone": "+919509675779"
+  }
+}
