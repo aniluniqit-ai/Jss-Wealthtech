@@ -1,6 +1,17 @@
 """Option Chain Analysis"""
 from dataclasses import dataclass
 
+SYMBOL_META = {
+    'NIFTY': {'step': 50},
+    'BANKNIFTY': {'step': 100},
+    'FINNIFTY': {'step': 50},
+    'MIDCPNIFTY': {'step': 25},
+    'SENSEX': {'step': 100},
+    'BANKEX': {'step': 100},
+    'CRUDEOIL': {'step': 50},
+    'NATURALGAS': {'step': 10},
+}
+
 @dataclass
 class OptionChainData:
     atm_strike: int = 0
@@ -27,8 +38,7 @@ class OptionChain:
 
     def _from_kotak(self, symbol, index_price, api):
         try:
-            from brokers.kotak_neo import SYMBOLS
-            info = SYMBOLS.get(symbol, {})
+            info = SYMBOL_META.get(symbol, {})
             step = info.get('step', 50)
             atm = round(index_price / step) * step
             
@@ -47,8 +57,7 @@ class OptionChain:
             return None
 
     def _estimate(self, symbol, index_price):
-        from brokers.kotak_neo import SYMBOLS
-        info = SYMBOLS.get(symbol, {})
+        info = SYMBOL_META.get(symbol, {})
         step = info.get('step', 50)
         atm = round(index_price / step) * step
         premium = index_price * 0.02

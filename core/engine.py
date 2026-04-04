@@ -4,6 +4,7 @@ JSS WEALTHTECH - TRADING ENGINE V8.0
 """
 import os, sys, json, time, threading
 from datetime import datetime
+from datetime import timedelta
 from zoneinfo import ZoneInfo
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -263,7 +264,7 @@ class TradingEngine:
             return False
         next_thursday = now
         while next_thursday.month == now.month:
-            next_thursday = next_thursday.replace(day=next_thursday.day + 7)
+            next_thursday = next_thursday + timedelta(days=7)
         return next_thursday.month != now.month
 
     def _update_mode(self):
@@ -299,14 +300,13 @@ class TradingEngine:
             return
         
         for symbol in self.SYMBOLS:
-            info = self.SYMBOLS[symbol]
             try:
-                quote = self.kotak.get_quote(info['token'], info['exchange'])
+                quote = self.kotak.get_ltp(symbol)
                 if quote:
                     self.ltp_data[symbol] = MarketData(
                         ltp=float(quote.get('ltp', 0)),
                         change=float(quote.get('change', 0)),
-                        change_pct=float(quote.get('changePct', 0)),
+                        change_pct=float(quote.get('change_pct', 0)),
                         high=float(quote.get('high', 0)),
                         low=float(quote.get('low', 0)),
                         open=float(quote.get('open', 0)),
