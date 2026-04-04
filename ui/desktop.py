@@ -5,11 +5,11 @@ JSS WEALTHTECH - DIVINE DESKTOP UI
 import os
 import json
 import threading
-import asyncio  # <--- Added for Async Fix
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from tkinter import *
 from tkinter import ttk
+from PIL import Image, ImageTk
 
 BG = "#1a1508"
 BG2 = "#2a2310"
@@ -23,6 +23,7 @@ WHITE = "#FFFFFF"
 GRAY = "#999977"
 PURPLE = "#9370DB"
 CYAN = "#00CED1"
+BLACK = "#000000"
 
 MANTRAS = """॥ ॐ श्री गणेशाय नमः ि॥
 श्री शिवाय नमस्तुभ्यं
@@ -46,12 +47,29 @@ class JssDesktop:
         self.root.configure(bg=BG)
         self.root.resizable(True, True)
 
+        self.config_data = self._load_config()
         self.kotak = None
-        self.tg_client = None # Direct Telethon Client
+        self.tg_reader = None
+        self.tg_bot = None
+        self.engine = None
         self.running = False
+        self._img_refs = []
 
         self._build_ui()
+        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.after(3000, self._auto_start)
+
+    def _load_config(self):
+        cfg_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'config.json')
+        try:
+            with open(cfg_path, 'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+        except Exception:
+            cfg = {}
+        cfg.setdefault('trading', {})
+        cfg['trading']['paper_mode'] = True
+        cfg['trading']['initial_capital'] = 1000
+        return cfg
 
     def _build_ui(self):
         main = Frame(self.root, bg=BG)
@@ -63,7 +81,8 @@ class JssDesktop:
 
         ganesh = Frame(top, bg=BG2)
         ganesh.pack(side=LEFT, padx=15)
-        Label(ganesh, text="🙏🙏", font=("Arial", 24), bg=BG2, fg=GOLD).pack()
+        if not self._make_image_label(ganesh, "ganesh.png", (48, 48), BG2):
+            Label(ganesh, text="🙏🙏", font=("Arial", 24), bg=BG2, fg=GOLD).pack()
 
         title = Frame(top, bg=BG2)
         title.pack(side=LEFT, expand=True)
@@ -107,6 +126,7 @@ class JssDesktop:
         self.lbl_expiry.pack(fill=X, pady=1)
         self.lbl_sentiment = Label(left, text="😐 NEUTRAL", font=("Arial", 11, "bold"), bg=BG2, fg=WHITE)
         self.lbl_sentiment.pack(pady=8)
+        self._make_image_label(left, "swastik.png", (72, 72), BG2)
 
         center = Frame(mid, bg=BG)
         center.pack(side=LEFT, fill=BOTH, expand=True, padx=5)
@@ -154,6 +174,7 @@ class JssDesktop:
         mo_box.pack(fill=X, padx=8)
         Label(mo_box, text="🔧 MODE", font=("Arial", 10, "bold"), bg=BG3, fg=GOLD).pack(pady=(0, 5))
         Label(mo_box, text="🔒 PAPER MODE", font=("Arial", 13, "bold"), bg=BG3, fg=RED).pack()
+        self._make_image_label(right, "laxmi_kuber.png", (96, 96), BG2)
 
         bottom = Frame(main, bg=BG2, height=180)
         bottom.pack(fill=X, pady=(5, 0))
@@ -168,6 +189,20 @@ class JssDesktop:
         self._log("ि॥ श्री गणेशाय नमः ि॥")
         self._log("Software Loaded")
         self._log("⏳ Auto-Starting in 3 seconds...")
+
+    def _make_image_label(self, parent, image_name, size, bg):
+        img_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images", image_name)
+        if not os.path.exists(img_path):
+            return False
+        try:
+            img = Image.open(img_path).resize(size, Image.Resampling.LANCZOS)
+            tk_img = ImageTk.PhotoImage(img)
+            self._img_refs.append(tk_img)
+            Label(parent, image=tk_img, bg=bg).pack(pady=4)
+            return True
+        except Exception as e:
+            self._log(f"⚠️ Image load failed ({image_name}): {e}")
+            return False
 
     def _log(self, msg):
         try:
@@ -188,7 +223,7 @@ class JssDesktop:
         self._log("🔌 Connecting Kotak...")
         try:
             from brokers.kotak_neo import KotakNeo
-            self.kotak = KotakNeo()
+            self.kotak = KotakNeo(self.config_data.get('kotak_neo', {}))
             self.kotak.set_log_callback(self._log)
             threading.Thread(target=self._kotak_thread, daemon=True).start()
         except Exception as e:
@@ -202,6 +237,7 @@ class JssDesktop:
                 self.root.after(0, lambda: self.lbl_kotak.config(text="✅ Kotak", fg=GREEN))
                 self.running = True
                 self.root.after(0, self._ltp_loop)
+                self.root.after(0, self._start_engine)
             else:
                 msg = self.kotak.status_msg
                 self.root.after(0, lambda m=msg: self._log("❌ Kotak: " + m))
@@ -209,58 +245,118 @@ class JssDesktop:
         except Exception as e:
             self.root.after(0, lambda: self._log("❌ Kotak Error: " + str(e)))
 
-    # =========================================================================
-    # --- ✅ FIXED: TELEGRAM CONSOLE MODE (ASYNCIO FIX) ---
-    # =========================================================================
     def _connect_telegram(self):
-        self._log("📱 Initializing Telegram (Console Mode)...")
-        # Thread start karenge taake GUI freeze na ho
-        threading.Thread(target=self._tg_thread_console, daemon=True).start()
-
-    def _tg_thread_console(self):
+        self._log("📱 Connecting Telegram reader + bot...")
         try:
-            from telethon.sync import TelegramClient
-            
-            # ⚠️ ZARURI: API ID aur HASH yahan daalo
-            # Agar nahi pata to my.telegram.org se le lein
-            API_ID = 37698803          # <--- Yahan Number daalo (e.g. 2834928)
-            API_HASH = '4af1e926406dece6224947d6d66b3ee7'  # <--- Yahan Hash daalo (e.g. 'a1b2c3d4...')
+            from telegram.reader import TelegramReader
+            from telegram.bot import TelegramBot
+            self.tg_reader = TelegramReader(self.config_data)
+            self.tg_reader.set_log_callback(self._log)
+            self.tg_reader.set_otp_callback(self._show_otp_popup)
+            self.tg_bot = TelegramBot(self.config_data)
+            self.tg_bot.connect()
+            threading.Thread(target=self._tg_thread, daemon=True).start()
+        except Exception as e:
+            self._log("❌ TG Setup: " + str(e))
 
-            # Async function define kar rahe hain
-            async def connect_task():
-                client = TelegramClient('jss_console_session', API_ID, API_HASH)
-                await client.connect()
-
-                if not client.is_user_authorized():
-                    # GUI ko batao ki user se input maanga jayega
-                    self.root.after(0, lambda: self._log("⚠️ New Login. CHECK CMD WINDOW."))
-                    
-                    print("\n" + "="*50)
-                    print("📲 TELEGRAM LOGIN (CONSOLE MODE)")
-                    print("="*50)
-                    phone = input("📱 Enter Phone (e.g. +91...): ")
-                    await client.send_code_request(phone)
-                    
-                    print("🔑 Check Telegram App for code.")
-                    otp = input("🔑 Enter OTP here: ")
-                    await client.sign_in(phone, otp)
-                    print("✅ Logged In!")
-                else:
-                    print("✅ Already Logged In via Session.")
-
-                # Client save karenge agar baad mein use karna ho
-                self.tg_client = client
-                
-                # GUI update karenge
+    def _tg_thread(self):
+        try:
+            ok = self.tg_reader.connect()
+            if ok:
                 self.root.after(0, lambda: self._log("🎉 Telegram Connected!"))
                 self.root.after(0, lambda: self.lbl_tg.config(text="✅ TG", fg=GREEN))
-
-            # Async task ko run karenge (Isse Event Loop error solve hoga)
-            asyncio.run(connect_task())
-
+            else:
+                msg = self.tg_reader.status_msg
+                self.root.after(0, lambda m=msg: self._log("❌ TG: " + m))
         except Exception as e:
             self.root.after(0, lambda: self._log("❌ TG Error: " + str(e)))
-            print(f"Error Details: {e}")
+
+    def _show_otp_popup(self, source):
+        self.root.after(0, lambda: self._create_otp_window(source))
+
+    def _create_otp_window(self, source):
+        win = Toplevel(self.root)
+        win.title("🔑 OTP - " + source)
+        win.geometry("420x280")
+        win.configure(bg=BG2)
+        win.transient(self.root)
+
+        Label(win, text="🔑", font=("Arial", 36), bg=BG2, fg=GOLD).pack(pady=8)
+        Label(win, text="TELEGRAM LOGIN CODE", font=("Arial", 14, "bold"), bg=BG2, fg=GOLD).pack(pady=3)
+
+        entry = Entry(win, font=("Arial", 20), bg=BG3, fg=WHITE, insertbackground=WHITE, justify="center")
+        entry.pack(pady=10, ipady=5, ipadx=20)
+        entry.focus_force()
+
+        def on_submit():
+            code = entry.get().strip()
+            if code and self.tg_reader:
+                self.tg_reader.submit_otp(code)
+                self._log("📱 OTP Received")
+            win.destroy()
+
+        btn = Button(win, text="✅ SUBMIT OTP", font=("Arial", 14, "bold"), bg=GOLD, fg=BLACK, command=on_submit)
+        btn.pack(pady=10)
+        entry.bind("<Return>", lambda e: on_submit())
+
+    def _start_engine(self):
+        if self.engine:
+            return
+        try:
+            from core.engine import TradingEngine
+            from core.option_chain import OptionChain
+            from core.indicators import Indicators
+            from core.capital import CapitalManager
+            from core.risk import RiskManager
+            from telegram.parser import SignalParser
+            from strategies import load_all_strategies
+
+            capital = CapitalManager(initial_capital=1000)
+            risk = RiskManager(self.config_data)
+            parser = SignalParser()
+            strategies = load_all_strategies()
+
+            self.engine = TradingEngine(
+                config=self.config_data,
+                kotak=self.kotak,
+                option_chain=OptionChain(),
+                indicators=Indicators(),
+                capital=capital,
+                risk=risk,
+                telegram_bot=self.tg_bot,
+                telegram_reader=self.tg_reader,
+                signal_parser=parser,
+                strategies=strategies,
+            )
+            self.engine.on_log = self._log
+            self.engine.on_update = self._on_engine_update
+            self.engine.on_trade = self._on_trade
+            self.engine.start()
+            self._log("🤖 Engine started (Paper mode | Capital ₹1000)")
+        except Exception as e:
+            self._log("❌ Engine start failed: " + str(e))
+
+    def _on_engine_update(self, status):
+        self.root.after(0, lambda s=status: self._apply_status(s))
+
+    def _apply_status(self, s):
+        mode = s.get('mode', 'NORMAL')
+        self.lbl_mode.config(text=mode, fg=MODE_COLORS.get(mode, WHITE))
+        self.lbl_day.config(text="Day: " + s.get('day_type', '-'))
+        self.lbl_time.config(text="Time: " + s.get('time_window', '-'))
+        self.lbl_expiry.config(text="Expiry: " + str(s.get('expiry_symbol') or 'None'))
+        cap = float(s.get('capital', 1000) or 1000)
+        pnl = float(s.get('total_pnl', 0) or 0)
+        self.lbl_capital.config(text=f"₹{cap:,.2f}")
+        self.lbl_pnl.config(text=f"P&L: ₹{pnl:,.2f}", fg=GREEN if pnl >= 0 else RED)
+
+    def _on_trade(self, trade, event):
+        if event == 'ENTRY':
+            text = f"{trade.symbol} {trade.strike} {trade.option_type} | Qty {trade.qty} | Entry ₹{trade.entry_price:.2f}"
+            self.root.after(0, lambda: self.lbl_trade.config(text=text, fg=WHITE))
+        elif event == 'EXIT':
+            text = f"Last Exit: {trade.symbol} {trade.option_type} | P&L ₹{trade.pnl:.2f}"
+            self.root.after(0, lambda: self.lbl_trade.config(text=text, fg=GREEN if trade.pnl >= 0 else RED))
 
     def _ltp_loop(self):
         if not self.running or not self.kotak or not self.kotak.logged_in:
@@ -277,25 +373,17 @@ class JssDesktop:
                             "{:+.2f}%".format(d['change_pct']), "{:.2f}".format(d['high']),
                             "{:.2f}".format(d['low']), "✅ LIVE"
                         ))
-
-            now = datetime.now(ZoneInfo("Asia/Kolkata"))
-            t = now.hour * 60 + now.minute
-            day = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"][now.weekday()]
-            tw = "MARKET CLOSED"
-            if 9*60+15 <= t < 9*60+30: tw = "OPENING"
-            elif 9*60+30 <= t < 11*60: tw = "TRENDING"
-            elif 13*60+30 <= t < 15*60+15: tw = "CLOSING"
-
-            exp_map = {"MON": "FINNIFTY", "TUE": "BANKNIFTY", "WED": "MIDCPNIFTY", "THU": "NIFTY", "FRI": "None", "SAT": "None", "SUN": "None"}
-            mode = "OBSERVE" if day == "MON" else ("EXPIRY" if exp_map.get(day, "None") != "None" else ("WAIT" if tw == "MARKET CLOSED" else "NORMAL"))
-
-            self.lbl_day.config(text="Day: " + day)
-            self.lbl_time.config(text="Time: " + tw)
-            self.lbl_expiry.config(text="Expiry: " + exp_map.get(day, "None"))
-            self.lbl_mode.config(text=mode, fg=MODE_COLORS.get(mode, WHITE))
         except Exception:
             pass
         self.root.after(1000, self._ltp_loop)
+
+    def _on_close(self):
+        try:
+            if self.engine:
+                self.engine.stop()
+        except Exception:
+            pass
+        self.root.destroy()
 
 
 def main():
