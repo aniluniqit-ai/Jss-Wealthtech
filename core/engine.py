@@ -4,6 +4,7 @@ JSS WEALTHTECH - TRADING ENGINE V8.0
 """
 import os, sys, json, time, threading
 from datetime import datetime
+from datetime import timedelta
 from zoneinfo import ZoneInfo
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -263,7 +264,7 @@ class TradingEngine:
             return False
         next_thursday = now
         while next_thursday.month == now.month:
-            next_thursday = next_thursday.replace(day=next_thursday.day + 7)
+            next_thursday = next_thursday + timedelta(days=7)
         return next_thursday.month != now.month
 
     def _update_mode(self):
@@ -299,14 +300,13 @@ class TradingEngine:
             return
         
         for symbol in self.SYMBOLS:
-            info = self.SYMBOLS[symbol]
             try:
-                quote = self.kotak.get_quote(info['token'], info['exchange'])
+                quote = self.kotak.get_ltp(symbol)
                 if quote:
                     self.ltp_data[symbol] = MarketData(
                         ltp=float(quote.get('ltp', 0)),
                         change=float(quote.get('change', 0)),
-                        change_pct=float(quote.get('changePct', 0)),
+                        change_pct=float(quote.get('change_pct', 0)),
                         high=float(quote.get('high', 0)),
                         low=float(quote.get('low', 0)),
                         open=float(quote.get('open', 0)),
@@ -409,6 +409,10 @@ class TradingEngine:
         cooldown_ok, _ = self.risk.check_cooldown()
         if not cooldown_ok:
             return
+        if self.time_window in [TimeWindow.SLOW, TimeWindow.NO_TRADE, TimeWindow.MARKET_CLOSED]:
+            return
+        if self.market_condition in [MarketCondition.SIDEWAYS, MarketCondition.UNKNOWN]:
+            return
         
         strategy = self._select_strategy()
         if not strategy:
@@ -441,6 +445,17 @@ class TradingEngine:
             confidence += tg_boost
         
         self.confidence = max(0, min(100, confidence))
+        min_momentum = int(float(self.config.get('trading', {}).get('min_momentum', 35) or 35))
+        min_buyer_seller = int(float(self.config.get('trading', {}).get('min_buyer_seller', 20) or 20))
+        if abs(self.momentum_score) < min_momentum:
+            return
+        if abs(self.buyer_seller_score) < min_buyer_seller:
+            return
+        symbol = self.expiry_symbol if self.expiry_symbol else 'NIFTY'
+        md = self.ltp_data.get(symbol)
+        min_expected_move = float(self.config.get('trading', {}).get('min_expected_move', 10) or 10)
+        if md and (md.high - md.low) < min_expected_move:
+            return
         
         min_conf = strategy.MIN_CONFIDENCE
         if self.mode == Mode.SAFE:

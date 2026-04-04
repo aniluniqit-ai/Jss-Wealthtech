@@ -11,9 +11,9 @@ MANTRAS = {
 
 class TelegramBot:
     def __init__(self, cfg):
-        self.cfg = cfg.get('telegram', {})
+        self.cfg = cfg.get('telegram_alerts', {}) or cfg.get('telegram', {})
         self.bot_token = self.cfg.get('bot_token', '')
-        self.chat_id = self.cfg.get('chat_id', '')
+        self.chat_id = self.cfg.get('chat_id', '') or self.cfg.get('my_chat_id', '')
         self.status_msg = "NOT SET"
 
     def connect(self):

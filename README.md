@@ -3,8 +3,9 @@
 
 ### Quick Start
 1. Run Install.bat (first time only)
-2. Run Start.bat
-3. Setup wizard will guide you
+2. Copy `config/config.example.json` to `config/config.json` and fill your credentials
+3. Run Start.bat
+4. Complete first Telegram OTP login (session will be reused)
 
 ### Features
 - Kotak Neo Live Connection

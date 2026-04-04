@@ -1,0 +1,40 @@
+{
+  "kotak_neo": {
+    "access_token": "PUT_YOUR_ACCESS_TOKEN",
+    "client_code": "PUT_YOUR_CLIENT_CODE",
+    "mobile": "+91XXXXXXXXXX",
+    "mpin": "PUT_YOUR_MPIN",
+    "totp_secret": "PUT_YOUR_TOTP_SECRET"
+  },
+  "telegram_alerts": {
+    "enabled": true,
+    "bot_token": "PUT_YOUR_BOT_TOKEN",
+    "my_chat_id": "PUT_YOUR_CHAT_ID"
+  },
+  "telegram": {
+    "api_id": "PUT_YOUR_API_ID",
+    "api_hash": "PUT_YOUR_API_HASH",
+    "phone": "+91XXXXXXXXXX"
+  },
+  "telegram_groups": [
+    {"name": "GROUP_1", "hash_id": "", "chat_id": "", "active": true},
+    {"name": "GROUP_2", "hash_id": "", "chat_id": "", "active": false}
+  ],
+  "trading": {
+    "paper_mode": true,
+    "update_interval": 5,
+    "sl_pct": 35,
+    "target_pct": 60,
+    "trailing_sl_pct": 3,
+    "max_daily_loss": 120,
+    "max_trades_per_day": 3,
+    "max_open_positions": 1,
+    "cooldown_seconds": 180,
+    "loss_cooldown_seconds": 300,
+    "max_consecutive_losses": 2,
+    "min_capital_floor": 300,
+    "min_momentum": 35,
+    "min_buyer_seller": 20,
+    "min_expected_move": 10
+  }
+}
