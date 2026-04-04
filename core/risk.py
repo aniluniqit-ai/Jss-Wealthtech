@@ -9,6 +9,8 @@ class RiskManager:
         self.max_positions = int(float(t.get('max_open_positions', 3) or 3))
         self.cooldown = int(float(t.get('cooldown_seconds', 60) or 60))
         self.loss_cooldown = int(float(t.get('loss_cooldown_seconds', 120) or 120))
+        self.max_consecutive_losses = int(float(t.get('max_consecutive_losses', 3) or 3))
+        self.min_capital_floor = float(t.get('min_capital_floor', 300) or 300)
         
         self.daily_pnl = 0.0
         self.daily_trades = 0
@@ -20,9 +22,15 @@ class RiskManager:
 
     def can_trade(self, capital):
         if self.kill_switch: return False, "KILL SWITCH ACTIVE"
+        if capital <= self.min_capital_floor:
+            self.kill_switch = True
+            return False, "Capital protection floor reached"
         if self.daily_pnl <= -self.max_daily_loss:
             self.kill_switch = True
             return False, "Daily loss limit reached"
+        if self.consecutive_losses >= self.max_consecutive_losses:
+            self.kill_switch = True
+            return False, "Consecutive loss limit reached"
         if self.daily_trades >= self.max_trades: return False, "Max trades reached"
         if len(self.open_positions) >= self.max_positions: return False, "Max positions reached"
         return True, "OK"

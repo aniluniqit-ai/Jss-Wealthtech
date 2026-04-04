@@ -409,6 +409,10 @@ class TradingEngine:
         cooldown_ok, _ = self.risk.check_cooldown()
         if not cooldown_ok:
             return
+        if self.time_window in [TimeWindow.SLOW, TimeWindow.NO_TRADE, TimeWindow.MARKET_CLOSED]:
+            return
+        if self.market_condition in [MarketCondition.SIDEWAYS, MarketCondition.UNKNOWN]:
+            return
         
         strategy = self._select_strategy()
         if not strategy:
@@ -441,6 +445,17 @@ class TradingEngine:
             confidence += tg_boost
         
         self.confidence = max(0, min(100, confidence))
+        min_momentum = int(float(self.config.get('trading', {}).get('min_momentum', 35) or 35))
+        min_buyer_seller = int(float(self.config.get('trading', {}).get('min_buyer_seller', 20) or 20))
+        if abs(self.momentum_score) < min_momentum:
+            return
+        if abs(self.buyer_seller_score) < min_buyer_seller:
+            return
+        symbol = self.expiry_symbol if self.expiry_symbol else 'NIFTY'
+        md = self.ltp_data.get(symbol)
+        min_expected_move = float(self.config.get('trading', {}).get('min_expected_move', 10) or 10)
+        if md and (md.high - md.low) < min_expected_move:
+            return
         
         min_conf = strategy.MIN_CONFIDENCE
         if self.mode == Mode.SAFE:
