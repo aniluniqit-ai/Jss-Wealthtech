@@ -3,6 +3,7 @@ import asyncio
 import time
 import threading
 from telethon import TelegramClient
+from telethon.errors import SessionPasswordNeededError
 
 
 class TelegramReader:
@@ -11,6 +12,7 @@ class TelegramReader:
         self.api_id = int(tg.get("api_id") or 0)
         self.api_hash = (tg.get("api_hash") or "").strip()
         self.phone = (tg.get("phone") or "").strip()
+        self.password = (tg.get("password") or "").strip()
         self.session_name = "jss_console_session"
         self.client = None
         self.loop = asyncio.new_event_loop()
@@ -36,6 +38,9 @@ class TelegramReader:
 
     def submit_otp(self, code):
         self.otp_code = (code or "").strip()
+
+    def submit_password(self, password):
+        self.password = (password or "").strip()
 
     def connect(self):
         if not self.api_id or not self.api_hash:
@@ -63,7 +68,21 @@ class TelegramReader:
                     self.status_msg = "OTP TIMEOUT"
                     return False
                 with self._loop_lock:
-                    self.loop.run_until_complete(self.client.sign_in(self.phone, self.otp_code))
+                    try:
+                        self.loop.run_until_complete(self.client.sign_in(self.phone, self.otp_code))
+                    except SessionPasswordNeededError:
+                        if not self.password:
+                            self.status_msg = "WAITING 2FA PASSWORD"
+                            if self.otp_callback:
+                                self.otp_callback("TELEGRAM_PASSWORD")
+                            for _ in range(180):
+                                if self.password:
+                                    break
+                                time.sleep(1)
+                        if not self.password:
+                            self.status_msg = "2FA PASSWORD TIMEOUT"
+                            return False
+                        self.loop.run_until_complete(self.client.sign_in(password=self.password))
             self.connected = True
             self.status_msg = "CONNECTED"
             self._log("✅ Telegram reader connected")

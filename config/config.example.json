@@ -14,7 +14,8 @@
   "telegram": {
     "api_id": "PUT_YOUR_API_ID",
     "api_hash": "PUT_YOUR_API_HASH",
-    "phone": "+91XXXXXXXXXX"
+    "phone": "+91XXXXXXXXXX",
+    "password": "PUT_TELEGRAM_2FA_PASSWORD_IF_ENABLED"
   },
   "telegram_groups": [
     {"name": "FOREX ACADEMY", "hash_id": "", "chat_id": "", "active": true},

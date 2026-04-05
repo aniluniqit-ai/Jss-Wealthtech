@@ -282,7 +282,13 @@ class JssDesktop:
         win.transient(self.root)
 
         Label(win, text="🔑", font=("Arial", 36), bg=BG2, fg=GOLD).pack(pady=8)
-        Label(win, text="TELEGRAM LOGIN CODE", font=("Arial", 14, "bold"), bg=BG2, fg=GOLD).pack(pady=3)
+        title = "TELEGRAM LOGIN CODE"
+        hint = "Enter OTP received in Telegram app"
+        if source == "TELEGRAM_PASSWORD":
+            title = "TELEGRAM 2FA PASSWORD"
+            hint = "Enter your Telegram two-step verification password"
+        Label(win, text=title, font=("Arial", 14, "bold"), bg=BG2, fg=GOLD).pack(pady=3)
+        Label(win, text=hint, font=("Arial", 9), bg=BG2, fg=WHITE).pack(pady=(0, 5))
 
         entry = Entry(win, font=("Arial", 20), bg=BG3, fg=WHITE, insertbackground=WHITE, justify="center")
         entry.pack(pady=10, ipady=5, ipadx=20)
@@ -291,8 +297,12 @@ class JssDesktop:
         def on_submit():
             code = entry.get().strip()
             if code and self.tg_reader:
-                self.tg_reader.submit_otp(code)
-                self._log("📱 OTP Received")
+                if source == "TELEGRAM_PASSWORD":
+                    self.tg_reader.submit_password(code)
+                    self._log("🔐 Telegram 2FA Password Received")
+                else:
+                    self.tg_reader.submit_otp(code)
+                    self._log("📱 OTP Received")
             win.destroy()
 
         btn = Button(win, text="✅ SUBMIT OTP", font=("Arial", 14, "bold"), bg=GOLD, fg=BLACK, command=on_submit)

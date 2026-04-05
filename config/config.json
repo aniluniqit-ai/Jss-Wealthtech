@@ -14,7 +14,8 @@
   "telegram": {
     "api_id": "37698803",
     "api_hash": "4af1e926406dece6224947d6d66b3ee7",
-    "phone": "+919509675779"
+    "phone": "+919509675779",
+    "password": ""
   },
   "telegram_groups": [
     {"name": "SMT - Education Group", "hash_id": "", "chat_id": "-1001470096877", "active": true},
