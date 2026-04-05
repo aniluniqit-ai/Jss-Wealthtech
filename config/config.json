@@ -19,12 +19,12 @@
   "telegram_groups": [
     {"name": "FOREX ACADEMY", "hash_id": "", "chat_id": "", "active": true},
     {"name": "TRADE WITH SOURABH BAJAJ", "hash_id": "", "chat_id": "", "active": true},
-    {"name": "SMT - Education Group", "hash_id": "", "chat_id": "", "active": true},
+    {"name": "👌 SMT - Education Group 👌", "hash_id": "", "chat_id": "", "active": true},
     {"name": "THE MARKET GURU", "hash_id": "", "chat_id": "", "active": true},
     {"name": "PREMIUM LEARNING", "hash_id": "", "chat_id": "", "active": true},
     {"name": "Trading MasterMind", "hash_id": "", "chat_id": "", "active": true},
     {"name": "GOLD TRADER SAM", "hash_id": "", "chat_id": "", "active": true},
-    {"name": "BANKNIFTY EXPERT", "hash_id": "", "chat_id": "", "active": true}
+    {"name": "BANKNIFTY EXPERT ™️ (SEBI REGISTERED)", "hash_id": "", "chat_id": "", "active": true}
   ],
   "trading": {
     "paper_mode": true,

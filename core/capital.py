@@ -33,13 +33,9 @@ class CapitalManager:
         self.history.append((self._now(), self.current, -amount))
 
     def get_lot_size(self, symbol_lot=50):
-        if self.current < 1500:
+        if self.current < 10000:
             return 1
-        if self.current < 3000:
-            return 1
-        if self.current < 5000:
-            return 2
-        return min(3, int(self.current / (symbol_lot * 200)))
+        return min(3, max(1, int(self.current / (symbol_lot * 200))))
 
     def get_drawdown_pct(self):
         if self.peak <= 0:
