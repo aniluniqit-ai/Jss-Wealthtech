@@ -17,14 +17,17 @@
     "phone": "+919509675779"
   },
   "telegram_groups": [
-    {"name": "FOREX ACADEMY", "hash_id": "", "chat_id": "", "active": true},
-    {"name": "TRADE WITH SOURABH BAJAJ", "hash_id": "", "chat_id": "", "active": true},
-    {"name": "👌 SMT - Education Group 👌", "hash_id": "", "chat_id": "", "active": true},
-    {"name": "THE MARKET GURU", "hash_id": "", "chat_id": "", "active": true},
-    {"name": "PREMIUM LEARNING", "hash_id": "", "chat_id": "", "active": true},
-    {"name": "Trading MasterMind", "hash_id": "", "chat_id": "", "active": true},
-    {"name": "GOLD TRADER SAM", "hash_id": "", "chat_id": "", "active": true},
-    {"name": "BANKNIFTY EXPERT ™️ (SEBI REGISTERED)", "hash_id": "", "chat_id": "", "active": true}
+    {"name": "SMT - Education Group", "hash_id": "", "chat_id": "-1001470096877", "active": true},
+    {"name": "THE MARKET GURU", "hash_id": "", "chat_id": "themarketguru29", "active": true},
+    {"name": "FOREX ACADEMY", "hash_id": "", "chat_id": "-1002001462925", "active": true},
+    {"name": "PREMIUM LEARNING", "hash_id": "", "chat_id": "-1002421495601", "active": true},
+    {"name": "FOREX ELITE TRADERS", "hash_id": "", "chat_id": "forexelitetraders9", "active": true},
+    {"name": "Trading MasterMind", "hash_id": "", "chat_id": "-1002123899122", "active": true},
+    {"name": "Banknifty Expert", "hash_id": "", "chat_id": "Banknifty_expert_future_options", "active": true},
+    {"name": "FOREX BULL", "hash_id": "", "chat_id": "-1001361867270", "active": true},
+    {"name": "Stock Market Tps", "hash_id": "", "chat_id": "-1001203364764", "active": true},
+    {"name": "FOREX ANYLIZER", "hash_id": "", "chat_id": "-1002554879920", "active": true},
+    {"name": "GOLD TRADER SAM", "hash_id": "", "chat_id": "-1001557229122", "active": true}
   ],
   "trading": {
     "paper_mode": true,
