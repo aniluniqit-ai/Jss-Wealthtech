@@ -1,5 +1,6 @@
 """Telegram Reader - reads messages from configured groups."""
 import asyncio
+import os
 import time
 import threading
 from telethon import TelegramClient
@@ -13,7 +14,9 @@ class TelegramReader:
         self.api_hash = (tg.get("api_hash") or "").strip()
         self.phone = (tg.get("phone") or "").strip()
         self.password = (tg.get("password") or "").strip()
-        self.session_name = "jss_console_session"
+        base = os.path.join(os.getcwd(), "data", "sessions")
+        os.makedirs(base, exist_ok=True)
+        self.session_name = os.path.join(base, "jss_console_session")
         self.client = None
         self.loop = asyncio.new_event_loop()
         self._loop_lock = threading.Lock()

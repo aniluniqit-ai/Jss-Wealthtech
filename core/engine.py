@@ -355,6 +355,15 @@ class TradingEngine:
     def _detect_market_condition(self):
         ind = self.indicators.results
         if not ind:
+            symbol = self.expiry_symbol if self.expiry_symbol else 'NIFTY'
+            md = self.ltp_data.get(symbol)
+            if md:
+                if md.change_pct > 0.35:
+                    return MarketCondition.TRENDING_UP
+                if md.change_pct < -0.35:
+                    return MarketCondition.TRENDING_DOWN
+                if abs(md.change_pct) < 0.10:
+                    return MarketCondition.SIDEWAYS
             return MarketCondition.UNKNOWN
         
         ema9 = ind.get('EMA_9', {}).get('signal', '')
@@ -387,13 +396,22 @@ class TradingEngine:
                 else:
                     score -= min(25, body * 2)
             break
+        if score == 0 and self.ltp_data:
+            symbol = self.expiry_symbol if self.expiry_symbol else 'NIFTY'
+            md = self.ltp_data.get(symbol)
+            if md:
+                score = md.change_pct * 25
         return max(-100, min(100, score))
 
     def _calculate_buyer_seller(self):
         score = 0
         ind = self.indicators.results
         if not ind:
-            return 0
+            symbol = self.expiry_symbol if self.expiry_symbol else 'NIFTY'
+            md = self.ltp_data.get(symbol)
+            if not md:
+                return 0
+            return max(-100, min(100, md.change_pct * 40))
         for val in ind.values():
             signal = val.get('signal', '')
             if signal == 'BULLISH':
@@ -411,7 +429,7 @@ class TradingEngine:
             return
         if self.time_window in [TimeWindow.SLOW, TimeWindow.NO_TRADE, TimeWindow.MARKET_CLOSED]:
             return
-        if self.market_condition in [MarketCondition.SIDEWAYS, MarketCondition.UNKNOWN]:
+        if self.market_condition == MarketCondition.SIDEWAYS:
             return
         
         strategy = self._select_strategy()
