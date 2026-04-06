@@ -11,9 +11,9 @@ from tkinter import *
 from tkinter import ttk
 from PIL import Image, ImageTk
 
-BG = "#1a1508"
-BG2 = "#2a2310"
-BG3 = "#353018"
+BG = "#C9A227"
+BG2 = "#A67C00"
+BG3 = "#8B6B00"
 GOLD = "#FFD700"
 DARK_GOLD = "#B8860B"
 ORANGE = "#FF8C00"
@@ -79,13 +79,15 @@ class JssDesktop:
         top.pack(fill=X, pady=(0, 5))
         top.pack_propagate(False)
 
-        ganesh = Frame(top, bg=BG2)
-        ganesh.pack(side=LEFT, padx=15)
-        if not self._make_image_label(ganesh, "ganesh.png", (48, 48), BG2):
-            Label(ganesh, text="🙏🙏", font=("Arial", 24), bg=BG2, fg=GOLD).pack()
+        center_head = Frame(top, bg=BG2)
+        center_head.pack(side=LEFT, expand=True)
+        ganesh = Frame(center_head, bg=BG2)
+        ganesh.pack()
+        if not self._make_image_label(ganesh, "ganesh.png", (64, 64), BG2):
+            Label(ganesh, text="🙏🙏", font=("Arial", 26), bg=BG2, fg=GOLD).pack()
 
-        title = Frame(top, bg=BG2)
-        title.pack(side=LEFT, expand=True)
+        title = Frame(center_head, bg=BG2)
+        title.pack()
         Label(title, text="॥ जय श्री सांवरीया सेठ ि॥", font=("Arial", 17, "bold"), bg=BG2, fg=GOLD).pack()
         Label(title, text="JSS WEALTHTECH V8.0", font=("Arial", 9), bg=BG2, fg=DARK_GOLD).pack()
 
