@@ -127,6 +127,7 @@ class TradingEngine:
         self.current_trade = None
         self.trades_history = []
         self.telegram_signals = []
+        self.last_decision = {}
         
         self.ltp_data = {}
         self.option_chain_data = {}
@@ -452,6 +453,12 @@ class TradingEngine:
             {'results': self.indicators.results, 'summary': {}},
             mc
         )
+        self.last_decision = {
+            'signal': signal,
+            'confidence': confidence,
+            'reason': reason,
+            'time': datetime.now(ZoneInfo('Asia/Kolkata')).strftime('%H:%M:%S')
+        }
         
         if self.time_window == TimeWindow.FAKE_BREAKOUT:
             confidence -= 15
@@ -667,5 +674,13 @@ class TradingEngine:
             'kotak_connected': self.kotak.logged_in if self.kotak else False,
             'tg_connected': self.tg_bot.status_msg if self.tg_bot else "N/A",
             'tg_reader_connected': self.tg_reader.status_msg if self.tg_reader else "N/A",
-            'paper_mode': self.config.get('trading', {}).get('paper_mode', True)
+            'paper_mode': self.config.get('trading', {}).get('paper_mode', True),
+            'telegram_recent': [
+                {
+                    'source': s.get('source', ''),
+                    'direction': s.get('direction', ''),
+                    'time': s.get('time', '')
+                } for s in self.telegram_signals[-5:]
+            ],
+            'last_decision': self.last_decision
         }

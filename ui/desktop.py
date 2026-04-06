@@ -126,6 +126,8 @@ class JssDesktop:
         self.lbl_time.pack(fill=X, pady=1)
         self.lbl_expiry = Label(i_box, text="Expiry: -", font=("Arial", 9), bg=BG3, fg=WHITE, anchor="w")
         self.lbl_expiry.pack(fill=X, pady=1)
+        self.lbl_tg_read = Label(i_box, text="TG Read: -", font=("Arial", 9), bg=BG3, fg=WHITE, anchor="w", wraplength=180, justify=LEFT)
+        self.lbl_tg_read.pack(fill=X, pady=1)
         self.lbl_sentiment = Label(left, text="😐 NEUTRAL", font=("Arial", 11, "bold"), bg=BG2, fg=WHITE)
         self.lbl_sentiment.pack(pady=8)
         self._make_image_label(left, "swastik.png", (72, 72), BG2)
@@ -357,10 +359,21 @@ class JssDesktop:
         self.lbl_day.config(text="Day: " + s.get('day_type', '-'))
         self.lbl_time.config(text="Time: " + s.get('time_window', '-'))
         self.lbl_expiry.config(text="Expiry: " + str(s.get('expiry_symbol') or 'None'))
+        tg_recent = s.get('telegram_recent', [])
+        if tg_recent:
+            names = [x.get('source', '') for x in tg_recent if x.get('source')]
+            self.lbl_tg_read.config(text="TG Read: " + ", ".join(names[-3:]))
+        else:
+            self.lbl_tg_read.config(text="TG Read: None")
         cap = float(s.get('capital', 1000) or 1000)
         pnl = float(s.get('total_pnl', 0) or 0)
         self.lbl_capital.config(text=f"₹{cap:,.2f}")
         self.lbl_pnl.config(text=f"P&L: ₹{pnl:,.2f}", fg=GREEN if pnl >= 0 else RED)
+        if not s.get('current_trade'):
+            d = s.get('last_decision', {}) or {}
+            if d.get('signal'):
+                txt = f"Last Decision: {d.get('signal')} {d.get('confidence', 0):.0f}% @ {d.get('time','-')} | {d.get('reason','')}"
+                self.lbl_trade.config(text=txt, fg=WHITE)
 
     def _on_trade(self, trade, event):
         if event == 'ENTRY':
