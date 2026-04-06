@@ -128,6 +128,8 @@ class JssDesktop:
         self.lbl_expiry.pack(fill=X, pady=1)
         self.lbl_tg_read = Label(i_box, text="TG Read: -", font=("Arial", 9), bg=BG3, fg=WHITE, anchor="w", wraplength=180, justify=LEFT)
         self.lbl_tg_read.pack(fill=X, pady=1)
+        self.lbl_tg_poll = Label(i_box, text="TG Poll: -", font=("Arial", 9), bg=BG3, fg=WHITE, anchor="w")
+        self.lbl_tg_poll.pack(fill=X, pady=1)
         self.lbl_sentiment = Label(left, text="😐 NEUTRAL", font=("Arial", 11, "bold"), bg=BG2, fg=WHITE)
         self.lbl_sentiment.pack(pady=8)
         self._make_image_label(left, "swastik.png", (72, 72), BG2)
@@ -359,12 +361,12 @@ class JssDesktop:
         self.lbl_day.config(text="Day: " + s.get('day_type', '-'))
         self.lbl_time.config(text="Time: " + s.get('time_window', '-'))
         self.lbl_expiry.config(text="Expiry: " + str(s.get('expiry_symbol') or 'None'))
-        tg_recent = s.get('telegram_recent', [])
-        if tg_recent:
-            names = [x.get('source', '') for x in tg_recent if x.get('source')]
-            self.lbl_tg_read.config(text="TG Read: " + ", ".join(names[-3:]))
+        tg_groups_read = s.get('tg_groups_read', [])
+        if tg_groups_read:
+            self.lbl_tg_read.config(text="TG Read: " + ", ".join(tg_groups_read[-3:]))
         else:
             self.lbl_tg_read.config(text="TG Read: None")
+        self.lbl_tg_poll.config(text="TG Poll: " + str(s.get('tg_last_poll') or '-'))
         cap = float(s.get('capital', 1000) or 1000)
         pnl = float(s.get('total_pnl', 0) or 0)
         self.lbl_capital.config(text=f"₹{cap:,.2f}")

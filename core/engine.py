@@ -127,6 +127,8 @@ class TradingEngine:
         self.current_trade = None
         self.trades_history = []
         self.telegram_signals = []
+        self.telegram_read_groups = []
+        self.last_tg_poll = ""
         self.last_decision = {}
         
         self.ltp_data = {}
@@ -327,22 +329,27 @@ class TradingEngine:
     def _read_telegram_signals(self):
         if not self.tg_reader or not self.tg_reader.connected:
             return
+        read_groups = []
         for group in self.config.get('telegram_groups', []):
             if not group.get('active', False):
                 continue
             try:
+                gname = group.get('name', 'Unknown')
                 messages = self.tg_reader.get_recent_messages(
                     group.get('hash_id') or group.get('chat_id'), limit=5
                 )
+                read_groups.append(gname)
                 for msg in messages:
                     parsed = self.signal_parser.parse(msg.get('text', ''))
                     if parsed:
-                        parsed['source'] = group.get('name', 'Unknown')
+                        parsed['source'] = gname
                         parsed['time'] = msg.get('date', '')
                         self.telegram_signals.append(parsed)
                         self.telegram_signals = self.telegram_signals[-50:]
             except:
                 pass
+        self.telegram_read_groups = read_groups
+        self.last_tg_poll = datetime.now(ZoneInfo('Asia/Kolkata')).strftime('%H:%M:%S')
 
     def _analyze_market(self):
         for symbol in self.candle_data:
@@ -682,5 +689,7 @@ class TradingEngine:
                     'time': s.get('time', '')
                 } for s in self.telegram_signals[-5:]
             ],
+            'tg_groups_read': self.telegram_read_groups[-8:],
+            'tg_last_poll': self.last_tg_poll,
             'last_decision': self.last_decision
         }
